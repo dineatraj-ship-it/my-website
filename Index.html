@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌸 Nityam Kirana Store 🌸</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-green: #1e8e3e;
+            --accent-orange: #ff9800;
+            --light-gray: #f4f4f4;
+            --white: #ffffff;
+            --shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Poppins', sans-serif; }
+
+        body { background-color: var(--light-gray); color: #333; overflow-x: hidden; }
+
+        /* --- Header --- */
+        header {
+            position: sticky; top: 0; z-index: 1000;
+            background: var(--white);
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 15px 20px; box-shadow: var(--shadow);
+        }
+
+        .header-title { font-weight: 600; font-size: 1.1rem; color: var(--primary-green); }
+
+        /* --- Sidebar --- */
+        #sidebar {
+            position: fixed; left: -250px; top: 0; width: 250px; height: 100%;
+            background: var(--white); z-index: 2000; transition: 0.3s;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.2); padding-top: 60px;
+        }
+        #sidebar.active { left: 0; }
+        .sidebar-item { padding: 15px 25px; cursor: pointer; border-bottom: 1px solid #eee; display: block; text-decoration: none; color: #333; }
+        .sidebar-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); z-index: 1500;
+        }
+
+        /* --- Page Logic --- */
+        .page { display: none; padding: 20px; max-width: 600px; margin: 0 auto; }
+        .page.active { display: block; }
+
+        /* --- UI Components --- */
+        .search-bar { width: 100%; padding: 12px; border-radius: 25px; border: 1px solid #ddd; margin-bottom: 20px; }
+        
+        .category-scroll { display: flex; overflow-x: auto; gap: 10px; margin-bottom: 20px; padding-bottom: 5px; }
+        .category-pill { 
+            background: var(--white); padding: 8px 15px; border-radius: 20px; 
+            white-space: nowrap; font-size: 0.9rem; border: 1px solid #ddd; cursor: pointer;
+        }
+
+        .product-card {
+            background: var(--white); border-radius: 12px; padding: 15px;
+            margin-bottom: 15px; display: flex; align-items: center; box-shadow: var(--shadow);
+        }
+        .product-img { width: 70px; height: 70px; object-fit: cover; border-radius: 8px; margin-right: 15px; }
+        .product-info { flex-grow: 1; }
+        .price { color: var(--primary-green); font-weight: 600; }
+
+        button {
+            border: none; border-radius: 8px; cursor: pointer; transition: 0.2s;
+            font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 5px;
+        }
+        .btn-add { background: var(--primary-green); color: white; padding: 8px 12px; margin-top: 5px; }
+        .btn-primary { background: var(--primary-green); color: white; width: 100%; padding: 15px; font-size: 1rem; margin-top: 20px; }
+        .btn-remove { color: #ff4444; background: none; font-size: 1.2rem; }
+
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 600; }
+        .form-group input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; }
+
+        .basket-item { 
+            display: flex; justify-content: space-between; align-items: center; 
+            background: white; padding: 10px; border-bottom: 1px solid #eee;
+        }
+
+        .history-card { background: white; padding: 15px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid var(--accent-orange); }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar-overlay" id="overlay" onclick="toggleMenu()"></div>
+    <div id="sidebar">
+        <div class="sidebar-item" onclick="showPage('home')">🏠 Home</div>
+        <div class="sidebar-item" onclick="showPage('history')">📜 History</div>
+        <div class="sidebar-item" onclick="showPage('addresses')">📍 Saved Address</div>
+        <a href="tel:8051797434" class="sidebar-item">📞 Contact Us</a>
+    </div>
+
+    <header>
+        <div onclick="toggleMenu()" style="cursor:pointer; font-size: 1.5rem;">☰</div>
+        <div class="header-title">🌸 Nityam Kirana Store 🌸</div>
+        <div onclick="showPage('basket')" style="cursor:pointer; position: relative;">
+            🛒 <span id="cart-count" style="background:red; color:white; border-radius:50%; padding:2px 6px; font-size:10px; position:absolute; top:-5px; right:-10px;">0</span>
+        </div>
+    </header>
+
+    <div id="home" class="page active">
+        <input type="text" class="search-bar" placeholder="Search products..." onkeyup="filterProducts(this.value)">
+        
+        <h3>Categories</h3>
+        <div class="category-scroll" id="categories">
+            </div>
+
+        <div id="product-list">
+            </div>
+    </div>
+
+    <div id="basket" class="page">
+        <h2>Your Basket</h2>
+        <div id="basket-content" style="margin-top:20px;"></div>
+        <button class="btn-primary" onclick="goToAddress()">➡ Next</button>
+    </div>
+
+    <div id="address-page" class="page">
+        <h2>Delivery Details</h2>
+        <div class="form-group">
+            <label>Full Name</label>
+            <input type="text" id="cust-name" placeholder="Enter your name">
+        </div>
+        <div class="form-group">
+            <label>Mobile Number</label>
+            <input type="number" id="cust-mobile" placeholder="10-digit number">
+        </div>
+        <div class="form-group">
+            <label>Address</label>
+            <input type="text" id="cust-address" placeholder="Flat, Street, Area">
+        </div>
+        <button class="btn-primary" onclick="goToPayment()">➡ Next</button>
+    </div>
+
+    <div id="payment-page" class="page">
+        <h2>Payment Method</h2>
+        <div style="background:white; padding:20px; border-radius:8px; margin-top:20px;">
+            <input type="radio" id="cod" checked>
+            <label for="cod">Cash on Delivery (COD)</label>
+        </div>
+        <button class="btn-primary" onclick="placeOrder()">✔ Done</button>
+    </div>
+
+    <div id="history" class="page">
+        <h2>Order History</h2>
+        <div id="history-list" style="margin-top:20px;"></div>
+    </div>
+
+    <div id="addresses" class="page">
+        <h2>Saved Addresses</h2>
+        <div id="address-list" style="margin-top:20px;"></div>
+    </div>
+
+    <script>
+        // --- Data ---
+        const products = [
+            { id: 1, name: "Premium Rice", price: 0, category: "Food Essentials", img: "https://via.placeholder.com/70" },
+            { id: 2, name: "Cooking Oil", price: 0, category: "Food Essentials", img: "https://via.placeholder.com/70" },
+            { id: 3, name: "Fresh Milk", price: 0, category: "Beverages", img: "https://via.placeholder.com/70" },
+            { id: 4, name: "Floor Cleaner", price: 0, category: "Cleaning Supplies", img: "https://via.placeholder.com/70" },
+            { id: 5, name: "Soap Bar", price: 0, category: "Personal Care", img: "https://via.placeholder.com/70" }
+        ];
+
+        let basket = [];
+        let orderHistory = [];
+        let savedAddresses = [];
+
+        // --- Navigation Logic ---
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+            toggleMenu(false);
+            window.scrollTo(0,0);
+        }
+
+        function toggleMenu(forceClose) {
+            const side = document.getElementById('sidebar');
+            const over = document.getElementById('overlay');
+            if(forceClose === false) {
+                side.classList.remove('active');
+                over.style.display = 'none';
+            } else {
+                side.classList.toggle('active');
+                over.style.display = side.classList.contains('active') ? 'block' : 'none';
+            }
+        }
+
+        // --- Product Logic ---
+        function renderProducts(filter = '') {
+            const container = document.getElementById('product-list');
+            container.innerHTML = '';
+            const filtered = products.filter(p => p.name.toLowerCase().includes(filter.toLowerCase()));
+            
+            filtered.forEach(p => {
+                container.innerHTML += `
+                    <div class="product-card">
+                        <img src="${p.img}" class="product-img">
+                        <div class="product-info">
+                            <strong>${p.name}</strong><br>
+                            <span class="price">₹${p.price}</span><br>
+                            <select id="qty-${p.id}" style="margin-top:5px;">
+                                ${[...Array(10).keys()].map(i => `<option value="${i+1}">${i+1}</option>`).join('')}
+                            </select>
+                        </div>
+                        <button class="btn-add" onclick="addToBasket(${p.id})">➕ Add</button>
+                    </div>
+                `;
+            });
+        }
+
+        function renderCategories() {
+            const cats = ["All", ...new Set(products.map(p => p.category))];
+            const container = document.getElementById('categories');
+            cats.forEach(c => {
+                container.innerHTML += `<div class="category-pill" onclick="filterByCategory('${c}')">${c}</div>`;
+            });
+        }
+
+        function filterByCategory(cat) {
+            if(cat === 'All') renderProducts('');
+            else {
+                const filtered = products.filter(p => p.category === cat);
+                // Implementation for category filtering
+                const container = document.getElementById('product-list');
+                container.innerHTML = '';
+                // Reuse logic for rendering...
+            }
+        }
+
+        // --- Basket Logic ---
+        function addToBasket(id) {
+            const product = products.find(p => p.id === id);
+            const qty = parseInt(document.getElementById(`qty-${id}`).value);
+            basket.push({ ...product, quantity: qty });
+            updateCartUI();
+            alert(`${product.name} added to basket!`);
+        }
+
+        function updateCartUI() {
+            document.getElementById('cart-count').innerText = basket.length;
+            const content = document.getElementById('basket-content');
+            content.innerHTML = '';
+            basket.forEach((item, index) => {
+                content.innerHTML += `
+                    <div class="basket-item">
+                        <div>
+                            <strong>${item.name}</strong> (Qty: ${item.quantity})<br>
+                            <span>₹${item.price}</span>
+                        </div>
+                        <button class="btn-remove" onclick="removeFromBasket(${index})">❌</button>
+                    </div>
+                `;
+            });
+        }
+
+        function removeFromBasket(index) {
+            basket.splice(index, 1);
+            updateCartUI();
+        }
+
+        // --- Checkout Workflow ---
+        function goToAddress() {
+            if(basket.length === 0) return alert("Basket is empty!");
+            showPage('address-page');
+        }
+
+        function goToPayment() {
+            const name = document.getElementById('cust-name').value;
+            const mob = document.getElementById('cust-mobile').value;
+            const addr = document.getElementById('cust-address').value;
+
+            if(!name || mob.length !== 10 || !addr) {
+                return alert("Please fill all details correctly (Mobile should be 10 digits)");
+            }
+            showPage('payment-page');
+        }
+
+        function placeOrder() {
+            const name = document.getElementById('cust-name').value;
+            const mob = document.getElementById('cust-mobile').value;
+            const addr = document.getElementById('cust-address').value;
+
+            const order = {
+                customerName: name,
+                mobile: mob,
+                address: addr,
+                items: [...basket],
+                timestamp: new Date().toLocaleString()
+            };
+
+            orderHistory.push(order);
+            savedAddresses.push(addr);
+            
+            // WhatsApp Integration
+            let itemText = order.items.map(i => `${i.name} (${i.quantity})`).join('\n');
+            let message = `*New Order - Nityam Kirana Store*\n\n`;
+            message += `*Name:* ${name}\n*Mobile:* ${mob}\n*Address:* ${addr}\n\n`;
+            message += `*Items:*\n${itemText}`;
+
+            const waUrl = `https://wa.me/918051797434?text=${encodeURIComponent(message)}`;
+            
+            // Reset Basket
+            basket = [];
+            updateCartUI();
+            renderHistory();
+            
+            window.location.href = waUrl;
+        }
+
+        function renderHistory() {
+            const container = document.getElementById('history-list');
+            container.innerHTML = '';
+            orderHistory.forEach(h => {
+                container.innerHTML += `
+                    <div class="history-card">
+                        <strong>${h.customerName}</strong> - ${h.timestamp}<br>
+                        <small>${h.items.length} items ordered</small>
+                    </div>
+                `;
+            });
+        }
+
+        // --- Init ---
+        renderProducts();
+        renderCategories();
+    </script>
+</body>
+</html>
